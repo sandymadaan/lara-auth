@@ -1,0 +1,89 @@
+###
+# Replace "fl-laravel_boilerplate" with your project repo name, e.g. "super_awesome_website-api"
+###
+
+version: 2
+notify:
+  webhooks:
+    # Reviewee webhook, to receive CircleCI build status
+    - url: https://api.reviewee.it/notification/ci
+
+jobs:
+  validate:
+    docker:
+     - image: svikramjeet/newman
+       environment:
+         CIRCLE_PROJECT_REPONAME: fl-laravel_boilerplate
+         REVIEWEE_URL: https://api.reviewee.it
+         COMMITS_CHECK_ENDPOINT:  repository/${CIRCLE_PROJECT_REPONAME}/haveRejectedCommits
+         COMMITS_CHECK_INDICATOR: \"success\":true
+    steps:
+      - run:
+          name: Check rejected commits
+          command: wget ${REVIEWEE_URL}/${COMMITS_CHECK_ENDPOINT} -q -O - | grep -q ${COMMITS_CHECK_INDICATOR}
+      - checkout
+      - run:
+          name: Heroku API-test App Deploy
+          command: git push --force https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_DEV_APP.git HEAD:refs/heads/master
+
+  deploy:
+    working_directory: ~/code
+    docker:
+     - image: jdecode/fl-laravel-boilerplate:latest
+     - image: postgres:latest
+       environment:
+         POSTGRES_PASSWORD: docker
+    steps:
+      - checkout
+      - restore_cache:
+         keys:
+           - composer-v1-{{ checksum "composer.lock" }}
+           - composer-v1-
+      - run:
+         name: Install Composer
+         command: |
+           composer install -n --prefer-dist
+      - save_cache:
+         key: composer-v1-{{ checksum "composer.lock" }}
+         paths:
+           - vendor
+      - run:
+         name: Heroku Staging Deploy
+         command: git push --force https://heroku:$HEROKU_API_KEY@git.heroku.com/$HEROKU_UAT_APP_NAME.git HEAD:refs/heads/master
+
+  # Please remove this job when cloning the repo for your project
+  # This job is for reporting CI issues on Slack's #php channel (F+L)
+  boilerplate_job:
+    machine: true
+    working_directory: ~/boilerplate
+    steps:
+      - run:
+          name: Check rejected commits
+          command: wget ${REVIEWEE_URL}/repository/${CIRCLE_PROJECT_REPONAME}/haveRejectedCommits -q -O - | grep -q ${COMMITS_CHECK_INDICATOR}
+          environment:
+            - CIRCLE_PROJECT_REPONAME: fl-laravel_boilerplate
+            - REVIEWEE_URL: https://api.reviewee.it
+            - COMMITS_CHECK_INDICATOR: \"success\":true
+      - checkout
+      - run:
+         name: Docker compose up, in detatched/background mode
+         command: docker-compose up -d
+      - run:
+         name: Composer install (and everything in "ci" script - post-update-cmd)
+         command: docker-compose exec laravel-api composer install
+      - run:
+         name: Exit CI
+         command: exit 0
+
+workflows:
+  version: 2
+  validate-and-deploy:
+    jobs:
+      # Please uncomment below lines when cloning the repo for your project
+      # - validate
+      # - deploy:
+      #   requires:
+      #   - validate
+
+      # Please remove below line when cloning the repo for your project
+      - boilerplate_job

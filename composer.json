@@ -1,0 +1,143 @@
+{
+    "name": "laravel/laravel",
+    "type": "project",
+    "description": "The Laravel Framework.",
+    "keywords": [
+        "framework",
+        "laravel"
+    ],
+    "license": "MIT",
+    "require": {
+        "php": "^8.1",
+        "ext-pdo": "*",
+        "doctrine/dbal": "^3.1",
+        "fruitcake/laravel-cors": "^2.0",
+        "guzzlehttp/guzzle": "^7.0.1",
+        "laravel/framework": "^8.54",
+        "laravel/sanctum": "^2.11",
+        "laravel/telescope": "^4.6",
+        "laravel/tinker": "^2.5",
+        "rollbar/rollbar-laravel": "^7.0"
+    },
+    "require-dev": {
+        "barryvdh/laravel-ide-helper": "^2.10",
+        "brainmaestro/composer-git-hooks": "^2.8",
+        "enlightn/security-checker": "^1.9",
+        "facade/ignition": "^2.5",
+        "fakerphp/faker": "^1.9.1",
+        "laravel/sail": "^1.0.1",
+        "mockery/mockery": "^1.4.2",
+        "nunomaduro/collision": "^5.0",
+        "php-parallel-lint/php-parallel-lint": "^1.3",
+        "phpmd/phpmd": "^2.10",
+        "squizlabs/php_codesniffer": "^3.6",
+        "pestphp/pest": "^1.20",
+        "pestphp/pest-plugin-laravel": "^1.1",
+        "phpunit/phpunit": "^9.3.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/",
+            "Database\\Factories\\": "database/factories/",
+            "Database\\Seeders\\": "database/seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        },
+        "files": [
+            "tests/helpers.php"
+        ]
+    },
+    "scripts": {
+        "dev-setup": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "chmod -R 777 storage bootstrap",
+            "@php artisan key:generate",
+            "@php artisan migrate",
+            "@php artisan key:generate --env=testing"
+        ],
+        "ci": [
+            "chmod -R 777 storage bootstrap",
+            "@php artisan key:generate --env=testing",
+            "@tests"
+        ],
+        "pre-commit": [
+            "@composer run parallel-lint",
+            "@composer run phpcs",
+            "@composer run phpmd",
+            "@composer run security-checker"
+        ],
+        "pre-push": [
+            "@composer run phpunit"
+        ],
+        "tests": [
+            "@pre-commit",
+            "@pre-push"
+        ],
+        "ide-helper": "[ $COMPOSER_DEV_MODE -eq 0 ] || composer run laravel-ide-helper",
+        "cghooks-update": "[ -f vendor/bin/cghooks ] && vendor/bin/cghooks update || echo 'cghooks not found'",
+        "post-autoload-dump": [
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
+            "@php artisan package:discover --ansi"
+        ],
+        "post-update-cmd": [
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
+            "@ci"
+        ],
+        "post-install-cmd": [
+            "@cghooks-update",
+            "@ide-helper",
+            "@tests"
+        ],
+        "post-root-package-install": [
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
+        ],
+        "post-create-project-cmd": [
+            "@php artisan key:generate --ansi"
+        ],
+        "cghooks": "vendor/bin/cghooks",
+        "phpcs": "vendor/bin/phpcs app --standard=PSR12 --colors -p",
+        "phpmd": "vendor/bin/phpmd . text .deploy/phpmd_ruleset.xml --exclude vendor,_ide_helper.php,database,app/Console/Kernel.php,tests",
+        "security-checker": "vendor/bin/security-checker security:check",
+        "phpcbf": "vendor/bin/phpcbf app --standard=PSR12",
+        "phpunit": "vendor/bin/phpunit --color=always",
+        "pest": "vendor/bin/pest --color=always",
+        "parallel-lint": "vendor/bin/parallel-lint --exclude vendor . --colors",
+        "laravel-ide-helper": "php artisan ide-helper:generate && php artisan ide-helper:meta"
+    },
+    "extra": {
+        "laravel": {
+            "dont-discover": [
+                "laravel/telescope",
+                "barryvdh/laravel-ide-helper"
+            ]
+        },
+        "hooks": {
+            "config": {
+                "stop-on-failure": [
+                    "pre-commit",
+                    "pre-push"
+                ]
+            },
+            "pre-commit": [
+                "docker-compose exec -T laravel-api composer run pre-commit"
+            ],
+            "pre-push": [
+                "docker-compose exec -T laravel-api composer run pre-push"
+            ]
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/package-versions-deprecated": true,
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

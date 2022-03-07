@@ -1,0 +1,46 @@
+version : "3"
+services:
+  laravel-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel-api
+    depends_on:
+      - laravel-pg
+    volumes:
+      - .:/var/www/html
+    restart: always
+    environment:
+      APP_NAME: 'F+L Laravel Boilerplate'
+      APP_ENV: 'local'
+      APP_DEBUG: 'true'
+      APP_URL: 'http://210.101.1.1'
+      DB_CONNECTION: 'pgsql'
+    networks:
+      laravel-api-network:
+        ipv4_address: 210.101.1.1
+
+  laravel-pg:
+    image: postgres:latest
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: docker
+      POSTGRES_DB: test_db
+    container_name: laravel-pg
+    volumes:
+      - laravel-pg-disk:/var/lib/postgres
+    networks:
+      laravel-api-network:
+        ipv4_address: 210.101.1.2
+
+# On-disk storage of DB data, when containers are stopped/removed
+volumes:
+  laravel-pg-disk: {}
+
+# Local network for services running using this docker-compose config
+networks:
+  laravel-api-network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 210.101.0.0/16
