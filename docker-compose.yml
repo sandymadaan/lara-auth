@@ -1,12 +1,12 @@
 version : "3"
 services:
-  laravel-api:
+  lara-auth-api:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: laravel-api
     depends_on:
-      - laravel-pg
+      - lara-auth-pg
     volumes:
       - .:/var/www/html
     restart: always
@@ -20,7 +20,7 @@ services:
       laravel-api-network:
         ipv4_address: 210.101.1.1
 
-  laravel-pg:
+  lara-auth-pg:
     image: postgres:latest
     restart: always
     environment:
